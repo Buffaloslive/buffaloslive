@@ -4,71 +4,83 @@
   <meta charset="utf-8" />
   <title>Buffalos Live</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Sleek font -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap" rel="stylesheet">
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
-    header {
-      padding: 15px;
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-    .logo {
-      max-width: 200px;
-      margin: 10px auto 20px;
-      display: block;
-    }
-    #player {
-      position: relative;
-      max-width: 1280px;
-      margin: 0 auto;
-    }
-    iframe {
-      width: 100%;
-      height: 70vh;
-      border: 0;
-    }
-    #offline {
-      display: none;
-      padding: 60px 20px;
-      font-size: 1.2rem;
-    }
+    :root { --maxw: 1280px; }
+    html,body{margin:0;background:#000;color:#fff;font-family:"Inter",system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    header{padding:18px 12px;text-align:center;font-weight:800;letter-spacing:.2px;font-size:clamp(20px,3.2vw,28px)}
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:0 12px 40px}
+    .logo{max-width:200px;height:auto;margin:8px auto 18px;display:block;opacity:.98}
+    .player{position:relative;aspect-ratio:16/9;background:#0c0c0c;border-radius:10px;overflow:hidden}
+    iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+    /* Offline panel */
+    #offline{display:none;align-items:center;justify-content:center;flex-direction:column;
+      gap:10px;text-align:center;min-height:50vh;background:#0c0c0c;border-radius:10px;padding:24px}
+    #offline h2{margin:0;font-weight:800}
+    #offline p{margin:0;color:#bbb}
+    .hidden{display:none !important}
   </style>
+  <script src="https://player.twitch.tv/js/embed/v1.js"></script>
 </head>
 <body>
   <header>Buffalos Live</header>
+  <div class="wrap">
+    <!-- Team logo (auto-hides if missing) -->
+    <img src="logo.png" alt="Buffalos Logo" class="logo"
+         onerror="this.style.display='none'"/>
 
-  <!-- Team Logo -->
-  <img src="logo.png" alt="Buffalos Logo" class="logo" />
+    <!-- Your offline message -->
+    <div id="offline">
+      <h2>Buffalos are offline</h2>
+      <p>Check back later for the next game!</p>
+    </div>
 
-  <!-- Twitch Player -->
-  <div id="player">
-    <iframe
-      src="https://player.twitch.tv/?channel=buffaloslive&parent=buffaloslive.com&parent=www.buffaloslive.com&autoplay=true"
-      allowfullscreen>
-    </iframe>
-  </div>
-
-  <!-- Offline Message -->
-  <div id="offline">
-    <h2>Buffalos are offline</h2>
-    <p>Check back later for the next game!</p>
+    <!-- Twitch player container -->
+    <div id="twitch-embed" class="player hidden"></div>
   </div>
 
   <script>
-    // If Twitch player doesn’t load in ~5s, show offline message
+    const CHANNEL = buffaloslive; // <-- change to your Twitch channel
+
+    // Build the Twitch player
+    const playerDiv = document.getElementById('twitch-embed');
+    const offlineDiv = document.getElementById('offline');
+
+    const player = new Twitch.Player("twitch-embed", {
+      channel: CHANNEL,
+      parent: ["buffaloslive.com","www.buffaloslive.com"],
+      autoplay: true,
+      muted: false,
+      // height/width are controlled by CSS
+    });
+
+    function showPlayer(){ playerDiv.classList.remove('hidden'); offlineDiv.classList.add('hidden'); }
+    function showOffline(){ offlineDiv.classList.remove('hidden'); playerDiv.classList.add('hidden'); }
+
+    // Use player events to swap views
+    player.addEventListener(Twitch.Player.READY, () => {
+      // Try to play; if it errors or immediately pauses, show offline
+      player.play().catch(() => showOffline());
+    });
+
+    player.addEventListener(Twitch.Player.ONLINE, showPlayer);
+    player.addEventListener(Twitch.Player.PLAY, showPlayer);
+
+    player.addEventListener(Twitch.Player.OFFLINE, showOffline);
+    player.addEventListener(Twitch.Player.PAUSE, () => {
+      // If Twitch shows the offline card, PLAY won't fire again; keep our message
+      setTimeout(() => { if (player.getEnded() || player.isPaused()) showOffline(); }, 1500);
+    });
+
+    // Safety fallback: after 6s, if nothing is playing, show offline
     setTimeout(() => {
-      const iframe = document.querySelector('iframe');
-      if (!iframe || iframe.contentWindow.length === 0) {
-        document.getElementById('player').style.display = 'none';
-        document.getElementById('offline').style.display = 'block';
-      }
-    }, 5000);
+      try {
+        const stateLooksLive = !player.isPaused() && !player.getEnded();
+        if (!stateLooksLive) showOffline();
+      } catch (e) { showOffline(); }
+    }, 6000);
   </script>
 </body>
 </html>
