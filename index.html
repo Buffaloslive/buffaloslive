@@ -13,10 +13,10 @@
     header{padding:18px 12px;text-align:center;font-weight:800;letter-spacing:.2px;font-size:clamp(20px,3.2vw,28px)}
     .wrap{max-width:var(--maxw);margin:0 auto;padding:0 12px 40px}
     .logo{max-width:200px;height:auto;margin:8px auto 18px;display:block;opacity:.98}
+    /* Player box */
     .player{position:relative;aspect-ratio:16/9;background:#0c0c0c;border-radius:10px;overflow:hidden}
-    iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
     /* Offline panel */
-    #offline{display:none;align-items:center;justify-content:center;flex-direction:column;
+    #offline{display:flex;align-items:center;justify-content:center;flex-direction:column;
       gap:10px;text-align:center;min-height:50vh;background:#0c0c0c;border-radius:10px;padding:24px}
     #offline h2{margin:0;font-weight:800}
     #offline p{margin:0;color:#bbb}
@@ -28,58 +28,60 @@
   <header>Buffalos Live</header>
   <div class="wrap">
     <!-- Team logo (auto-hides if missing) -->
-    <img src="logo.png" alt="Buffalos Logo" class="logo"
-         onerror="this.style.display='none'"/>
+    <img src="logo.png" alt="Buffalos Logo" class="logo" onerror="this.style.display='none'"/>
 
-    <!-- Your offline message -->
+    <!-- Offline message (shown by default) -->
     <div id="offline">
       <h2>Buffalos are offline</h2>
       <p>Check back later for the next game!</p>
     </div>
 
-    <!-- Twitch player container -->
+    <!-- Twitch player container (hidden until live) -->
     <div id="twitch-embed" class="player hidden"></div>
   </div>
 
   <script>
-    const CHANNEL = buffaloslive; // <-- change to your Twitch channel
+    // CHANGE THIS to your channel name
+    const CHANNEL = 'buffaloslive';
 
-    // Build the Twitch player
-    const playerDiv = document.getElementById('twitch-embed');
+    const playerDiv  = document.getElementById('twitch-embed');
     const offlineDiv = document.getElementById('offline');
 
     const player = new Twitch.Player("twitch-embed", {
       channel: CHANNEL,
       parent: ["buffaloslive.com","www.buffaloslive.com"],
       autoplay: true,
-      muted: false,
-      // height/width are controlled by CSS
+      muted: false
     });
 
-    function showPlayer(){ playerDiv.classList.remove('hidden'); offlineDiv.classList.add('hidden'); }
-    function showOffline(){ offlineDiv.classList.remove('hidden'); playerDiv.classList.add('hidden'); }
+    function showPlayer()  { playerDiv.classList.remove('hidden'); offlineDiv.classList.add('hidden'); }
+    function showOffline() { offlineDiv.classList.remove('hidden'); playerDiv.classList.add('hidden'); }
 
-    // Use player events to swap views
+    // When the player is ready, try to play; if it can't, show offline
     player.addEventListener(Twitch.Player.READY, () => {
-      // Try to play; if it errors or immediately pauses, show offline
-      player.play().catch(() => showOffline());
+      player.play().then(showPlayer).catch(showOffline);
     });
 
+    // If Twitch reports live, show the player
     player.addEventListener(Twitch.Player.ONLINE, showPlayer);
-    player.addEventListener(Twitch.Player.PLAY, showPlayer);
+    player.addEventListener(Twitch.Player.PLAY,   showPlayer);
 
+    // If it goes offline/ended/paused for long, show our offline screen
     player.addEventListener(Twitch.Player.OFFLINE, showOffline);
-    player.addEventListener(Twitch.Player.PAUSE, () => {
-      // If Twitch shows the offline card, PLAY won't fire again; keep our message
-      setTimeout(() => { if (player.getEnded() || player.isPaused()) showOffline(); }, 1500);
+    player.addEventListener(Twitch.Player.ENDED,   showOffline);
+    player.addEventListener(Twitch.Player.PAUSE,   () => {
+      setTimeout(() => {
+        try {
+          if (player.isPaused() || player.getEnded()) showOffline();
+        } catch (_) { showOffline(); }
+      }, 1200);
     });
 
-    // Safety fallback: after 6s, if nothing is playing, show offline
+    // Safety: after 6s, if not playing, show offline
     setTimeout(() => {
       try {
-        const stateLooksLive = !player.isPaused() && !player.getEnded();
-        if (!stateLooksLive) showOffline();
-      } catch (e) { showOffline(); }
+        if (player.isPaused() || player.getEnded()) showOffline();
+      } catch (_) { showOffline(); }
     }, 6000);
   </script>
 </body>
