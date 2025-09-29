@@ -34,16 +34,23 @@
       display:block;
       opacity:.98;
     }
-    /* Player box */
+    /* Player wrapper */
     .player {
       position:relative;
       width:100%;
       max-width:1280px;
       margin:0 auto;
-      aspect-ratio:16/9;
       background:#0c0c0c;
       border-radius:10px;
       overflow:hidden;
+    }
+    /* Force iframe fill */
+    .player iframe {
+      width:100% !important;
+      height:100% !important;
+      aspect-ratio:16/9;
+      border:0;
+      display:block;
     }
     /* Offline panel */
     #offline {
@@ -67,23 +74,21 @@
 <body>
   <header>Buffalos Live</header>
   <div class="wrap">
-    <!-- Team logo (auto-hides if missing) -->
+    <!-- Team logo -->
     <img src="logo.png" alt="Buffalos Logo" class="logo" onerror="this.style.display='none'"/>
 
-    <!-- Offline message (visible by default) -->
+    <!-- Offline message -->
     <div id="offline">
       <h2>Buffalos are offline</h2>
       <p>Check back later for the next game!</p>
     </div>
 
-    <!-- Twitch player container (hidden until live) -->
+    <!-- Twitch player -->
     <div id="twitch-embed" class="player hidden"></div>
   </div>
 
   <script>
-    // CHANGE THIS to your Twitch channel
     const CHANNEL = 'buffaloslive';
-
     const playerDiv  = document.getElementById('twitch-embed');
     const offlineDiv = document.getElementById('offline');
 
@@ -91,39 +96,30 @@
       channel: CHANNEL,
       parent: ["buffaloslive.com","www.buffaloslive.com"],
       autoplay: true,
+      width: "100%",
+      height: "100%",
       muted: false
     });
 
-    function showPlayer()  {
-      playerDiv.classList.remove('hidden');
-      offlineDiv.classList.add('hidden');
-    }
-    function showOffline() {
-      offlineDiv.classList.remove('hidden');
-      playerDiv.classList.add('hidden');
-    }
+    function showPlayer()  { playerDiv.classList.remove('hidden'); offlineDiv.classList.add('hidden'); }
+    function showOffline() { offlineDiv.classList.remove('hidden'); playerDiv.classList.add('hidden'); }
 
-    // Show offline until proven live
     showOffline();
 
-    // Twitch events
     player.addEventListener(Twitch.Player.ONLINE, showPlayer);
     player.addEventListener(Twitch.Player.PLAY,   showPlayer);
     player.addEventListener(Twitch.Player.OFFLINE, showOffline);
     player.addEventListener(Twitch.Player.ENDED,   showOffline);
     player.addEventListener(Twitch.Player.PAUSE,   () => {
       setTimeout(() => {
-        try {
-          if (player.isPaused() || player.getEnded()) showOffline();
-        } catch (_) { showOffline(); }
+        try { if (player.isPaused() || player.getEnded()) showOffline(); }
+        catch (_) { showOffline(); }
       }, 1200);
     });
 
-    // Fallback safety check after 6s
     setTimeout(() => {
-      try {
-        if (player.isPaused() || player.getEnded()) showOffline();
-      } catch (_) { showOffline(); }
+      try { if (player.isPaused() || player.getEnded()) showOffline(); }
+      catch (_) { showOffline(); }
     }, 6000);
   </script>
 </body>
