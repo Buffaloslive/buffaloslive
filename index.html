@@ -9,18 +9,58 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap" rel="stylesheet">
   <style>
     :root { --maxw: 1280px; }
-    html,body{margin:0;background:#000;color:#fff;font-family:"Inter",system-ui,Segoe UI,Roboto,Helvetica,Arial}
-    header{padding:18px 12px;text-align:center;font-weight:800;letter-spacing:.2px;font-size:clamp(20px,3.2vw,28px)}
-    .wrap{max-width:var(--maxw);margin:0 auto;padding:0 12px 40px}
-    .logo{max-width:200px;height:auto;margin:8px auto 18px;display:block;opacity:.98}
+    html,body {
+      margin:0;
+      background:#000;
+      color:#fff;
+      font-family:"Inter",system-ui,Segoe UI,Roboto,Helvetica,Arial;
+    }
+    header {
+      padding:18px 12px;
+      text-align:center;
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size:clamp(20px,3.2vw,28px);
+    }
+    .wrap {
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding:0 12px 40px;
+    }
+    .logo {
+      max-width:200px;
+      height:auto;
+      margin:8px auto 18px;
+      display:block;
+      opacity:.98;
+    }
     /* Player box */
-    .player{position:relative;aspect-ratio:16/9;background:#0c0c0c;border-radius:10px;overflow:hidden}
+    .player {
+      position:relative;
+      width:100%;
+      max-width:1280px;
+      margin:0 auto;
+      aspect-ratio:16/9;
+      background:#0c0c0c;
+      border-radius:10px;
+      overflow:hidden;
+    }
     /* Offline panel */
-    #offline{display:flex;align-items:center;justify-content:center;flex-direction:column;
-      gap:10px;text-align:center;min-height:50vh;background:#0c0c0c;border-radius:10px;padding:24px}
-    #offline h2{margin:0;font-weight:800}
-    #offline p{margin:0;color:#bbb}
-    .hidden{display:none !important}
+    #offline {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      gap:10px;
+      text-align:center;
+      min-height:50vh;
+      background:#0c0c0c;
+      border-radius:10px;
+      padding:24px;
+    }
+    #offline h2 { margin:0; font-weight:800 }
+    #offline p  { margin:0; color:#bbb }
+    .hidden { display:none !important }
   </style>
   <script src="https://player.twitch.tv/js/embed/v1.js"></script>
 </head>
@@ -30,7 +70,7 @@
     <!-- Team logo (auto-hides if missing) -->
     <img src="logo.png" alt="Buffalos Logo" class="logo" onerror="this.style.display='none'"/>
 
-    <!-- Offline message (shown by default) -->
+    <!-- Offline message (visible by default) -->
     <div id="offline">
       <h2>Buffalos are offline</h2>
       <p>Check back later for the next game!</p>
@@ -41,7 +81,7 @@
   </div>
 
   <script>
-    // CHANGE THIS to your channel name
+    // CHANGE THIS to your Twitch channel
     const CHANNEL = 'buffaloslive';
 
     const playerDiv  = document.getElementById('twitch-embed');
@@ -54,19 +94,21 @@
       muted: false
     });
 
-    function showPlayer()  { playerDiv.classList.remove('hidden'); offlineDiv.classList.add('hidden'); }
-    function showOffline() { offlineDiv.classList.remove('hidden'); playerDiv.classList.add('hidden'); }
+    function showPlayer()  {
+      playerDiv.classList.remove('hidden');
+      offlineDiv.classList.add('hidden');
+    }
+    function showOffline() {
+      offlineDiv.classList.remove('hidden');
+      playerDiv.classList.add('hidden');
+    }
 
-    // When the player is ready, try to play; if it can't, show offline
-    player.addEventListener(Twitch.Player.READY, () => {
-      player.play().then(showPlayer).catch(showOffline);
-    });
+    // Show offline until proven live
+    showOffline();
 
-    // If Twitch reports live, show the player
+    // Twitch events
     player.addEventListener(Twitch.Player.ONLINE, showPlayer);
     player.addEventListener(Twitch.Player.PLAY,   showPlayer);
-
-    // If it goes offline/ended/paused for long, show our offline screen
     player.addEventListener(Twitch.Player.OFFLINE, showOffline);
     player.addEventListener(Twitch.Player.ENDED,   showOffline);
     player.addEventListener(Twitch.Player.PAUSE,   () => {
@@ -77,7 +119,7 @@
       }, 1200);
     });
 
-    // Safety: after 6s, if not playing, show offline
+    // Fallback safety check after 6s
     setTimeout(() => {
       try {
         if (player.isPaused() || player.getEnded()) showOffline();
