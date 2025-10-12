@@ -4,16 +4,15 @@
   <meta charset="utf-8" />
   <title>Buffalos Live</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Sleek font -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap" rel="stylesheet">
   <style>
     :root { --maxw: 1280px; }
-    html,body {
+    html, body {
       margin:0;
       background:#000;
       color:#fff;
-      font-family:"Inter",system-ui,Segoe UI,Roboto,Helvetica,Arial;
+      font-family:"Inter", system-ui, Segoe UI, Roboto, Helvetica, Arial;
     }
     header {
       padding:18px 12px;
@@ -34,7 +33,6 @@
       display:block;
       opacity:.98;
     }
-    /* Player wrapper */
     .player {
       position:relative;
       width:100%;
@@ -44,7 +42,6 @@
       border-radius:10px;
       overflow:hidden;
     }
-    /* Force iframe fill */
     .player iframe {
       width:100% !important;
       height:100% !important;
@@ -52,7 +49,6 @@
       border:0;
       display:block;
     }
-    /* Offline panel */
     #offline {
       display:flex;
       align-items:center;
@@ -68,41 +64,67 @@
     #offline h2 { margin:0; font-weight:800 }
     #offline p  { margin:0; color:#bbb }
     .hidden { display:none !important }
+
+    /* Fallback Twitch link */
+    #fallback-link {
+      margin-top:12px;
+      text-align:center;
+    }
+    #fallback-link a {
+      color:#0af;
+      font-weight:600;
+      font-size:16px;
+      text-decoration:underline;
+    }
   </style>
   <script src="https://player.twitch.tv/js/embed/v1.js"></script>
 </head>
 <body>
   <header>Buffalos Live</header>
   <div class="wrap">
-    <!-- Team logo -->
     <img src="logo.png" alt="Buffalos Logo" class="logo" onerror="this.style.display='none'"/>
 
-    <!-- Offline message -->
+    <!-- Offline fallback -->
     <div id="offline">
       <h2>Buffalos are offline</h2>
       <p>Check back later for the next game!</p>
     </div>
 
-    <!-- Twitch player -->
+    <!-- Twitch player embed -->
     <div id="twitch-embed" class="player hidden"></div>
+
+    <!-- Fallback direct Twitch link -->
+    <div id="fallback-link" class="hidden">
+      <p>If the stream doesn't appear, <a href="https://www.twitch.tv/buffaloslive" target="_blank" rel="noopener">watch it directly on Twitch</a>.</p>
+    </div>
   </div>
 
   <script>
     const CHANNEL = 'buffaloslive';
     const playerDiv  = document.getElementById('twitch-embed');
     const offlineDiv = document.getElementById('offline');
+    const linkDiv    = document.getElementById('fallback-link');
 
     const player = new Twitch.Player("twitch-embed", {
       channel: CHANNEL,
-      parent: ["buffaloslive.com","www.buffaloslive.com"],
+      parent: ["buffaloslive.com", "www.buffaloslive.com"],
       autoplay: true,
       width: "100%",
       height: "100%",
       muted: false
     });
 
-    function showPlayer()  { playerDiv.classList.remove('hidden'); offlineDiv.classList.add('hidden'); }
-    function showOffline() { offlineDiv.classList.remove('hidden'); playerDiv.classList.add('hidden'); }
+    function showPlayer() {
+      playerDiv.classList.remove('hidden');
+      offlineDiv.classList.add('hidden');
+      linkDiv.classList.remove('hidden');  // show fallback link
+    }
+
+    function showOffline() {
+      offlineDiv.classList.remove('hidden');
+      playerDiv.classList.add('hidden');
+      linkDiv.classList.add('hidden');  // hide fallback link when not live
+    }
 
     showOffline();
 
