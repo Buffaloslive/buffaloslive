@@ -122,7 +122,7 @@
   <script>
     // === CONFIG ===
     const CHANNEL_ID = "UCCvYIv25tpMuQuGATwxvMjA";
-    const API_KEY    = "AIzaSyCihoQOZIeWFuQrtOOHs7wLPmQZRK4HV6I";
+    const API_PROXY_URL = "https://buffalos-live-proxy.wdoggett.workers.dev";
 
     const playerDiv  = document.getElementById("youtube-embed");
     const offlineDiv = document.getElementById("offline");
@@ -132,9 +132,7 @@
 
     async function checkIfLive() {
       try {
-        const resp = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&type=video&eventType=live&key=${API_KEY}`
-        );
+        const resp = await fetch(API_PROXY_URL);
         const data = await resp.json();
         if (data.items && data.items.length > 0) {
           const videoId = data.items[0].id.videoId;
