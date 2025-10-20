@@ -49,7 +49,7 @@
       border:0;
       display:block;
     }
-    #offline {
+    #offline, #loading {
       display:flex;
       align-items:center;
       justify-content:center;
@@ -61,11 +61,9 @@
       border-radius:10px;
       padding:24px;
     }
-    #offline h2 { margin:0; font-weight:800 }
-    #offline p  { margin:0; color:#bbb }
+    #offline h2, #loading h2 { margin:0; font-weight:800 }
+    #offline p, #loading p  { margin:0; color:#bbb }
     .hidden { display:none !important }
-
-    /* Fallback Twitch link */
     #fallback-link {
       margin-top:12px;
       text-align:center;
@@ -76,73 +74,104 @@
       font-size:16px;
       text-decoration:underline;
     }
+
+    /* Loading animation */
+    .spinner {
+      width:36px;
+      height:36px;
+      border:4px solid #444;
+      border-top:4px solid #0af;
+      border-radius:50%;
+      animation: spin 1s linear infinite;
+      margin-top:12px;
+    }
+    @keyframes spin {
+      from { transform:rotate(0deg); }
+      to { transform:rotate(360deg); }
+    }
   </style>
-  <script src="https://player.twitch.tv/js/embed/v1.js"></script>
 </head>
 <body>
   <header>Buffalos Live</header>
   <div class="wrap">
     <img src="logo.png" alt="Buffalos Logo" class="logo" onerror="this.style.display='none'"/>
 
+    <!-- Loading screen -->
+    <div id="loading">
+      <h2>Buffalos Loading...</h2>
+      <div class="spinner"></div>
+    </div>
+
     <!-- Offline fallback -->
-    <div id="offline">
+    <div id="offline" class="hidden">
       <h2>Buffalos are offline</h2>
       <p>Check back later for the next game!</p>
     </div>
 
-    <!-- Twitch player embed -->
-    <div id="twitch-embed" class="player hidden"></div>
+    <!-- YouTube player -->
+    <div id="youtube-embed" class="player hidden"></div>
 
-    <!-- Fallback direct Twitch link -->
+    <!-- Fallback link -->
     <div id="fallback-link" class="hidden">
-      <p>If the stream doesn't appear, <a href="https://www.twitch.tv/buffaloslive" target="_blank" rel="noopener">watch it directly on Twitch</a>.</p>
+      <p>If the stream doesn’t appear, 
+        <a id="youtube-link" href="#" target="_blank" rel="noopener">watch directly on YouTube</a>.
+      </p>
     </div>
   </div>
 
   <script>
-    const CHANNEL = 'buffaloslive';
-    const playerDiv  = document.getElementById('twitch-embed');
-    const offlineDiv = document.getElementById('offline');
-    const linkDiv    = document.getElementById('fallback-link');
+    // === CONFIG ===
+    const CHANNEL_ID = "UCCvYIv25tpMuQuGATwxvMjA";
+    const API_KEY    = "AIzaSyCihoQOZIeWFuQrtOOHs7wLPmQZRK4HV6I";
 
-    const player = new Twitch.Player("twitch-embed", {
-      channel: CHANNEL,
-      parent: ["buffaloslive.com", "www.buffaloslive.com"],
-      autoplay: true,
-      width: "100%",
-      height: "100%",
-      muted: false
-    });
+    const playerDiv  = document.getElementById("youtube-embed");
+    const offlineDiv = document.getElementById("offline");
+    const loadingDiv = document.getElementById("loading");
+    const linkDiv    = document.getElementById("fallback-link");
+    const linkAnchor = document.getElementById("youtube-link");
 
-    function showPlayer() {
-      playerDiv.classList.remove('hidden');
-      offlineDiv.classList.add('hidden');
-      linkDiv.classList.remove('hidden');  // show fallback link
+    async function checkIfLive() {
+      try {
+        const resp = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&type=video&eventType=live&key=${API_KEY}`
+        );
+        const data = await resp.json();
+        if (data.items && data.items.length > 0) {
+          const videoId = data.items[0].id.videoId;
+          playerDiv.innerHTML = `
+            <iframe
+              src="https://www.youtube.com/embed/${videoId}?autoplay=1"
+              allow="autoplay; encrypted-media"
+              allowfullscreen>
+            </iframe>`;
+          showPlayer(videoId);
+        } else {
+          showOffline();
+        }
+      } catch (err) {
+        console.error("YouTube API error:", err);
+        showOffline();
+      }
+    }
+
+    function showPlayer(videoId) {
+      loadingDiv.classList.add("hidden");
+      playerDiv.classList.remove("hidden");
+      offlineDiv.classList.add("hidden");
+      linkDiv.classList.remove("hidden");
+      linkAnchor.href = `https://www.youtube.com/watch?v=${videoId}`;
     }
 
     function showOffline() {
-      offlineDiv.classList.remove('hidden');
-      playerDiv.classList.add('hidden');
-      linkDiv.classList.add('hidden');  // hide fallback link when not live
+      loadingDiv.classList.add("hidden");
+      playerDiv.classList.add("hidden");
+      offlineDiv.classList.remove("hidden");
+      linkDiv.classList.add("hidden");
     }
 
-    showOffline();
-
-    player.addEventListener(Twitch.Player.ONLINE, showPlayer);
-    player.addEventListener(Twitch.Player.PLAY,   showPlayer);
-    player.addEventListener(Twitch.Player.OFFLINE, showOffline);
-    player.addEventListener(Twitch.Player.ENDED,   showOffline);
-    player.addEventListener(Twitch.Player.PAUSE,   () => {
-      setTimeout(() => {
-        try { if (player.isPaused() || player.getEnded()) showOffline(); }
-        catch (_) { showOffline(); }
-      }, 1200);
-    });
-
-    setTimeout(() => {
-      try { if (player.isPaused() || player.getEnded()) showOffline(); }
-      catch (_) { showOffline(); }
-    }, 6000);
+    // Initial check + refresh every 60s
+    checkIfLive();
+    setInterval(checkIfLive, 60000);
   </script>
 </body>
 </html>
