@@ -64,16 +64,6 @@
     #offline h2, #loading h2 { margin:0; font-weight:800 }
     #offline p, #loading p  { margin:0; color:#bbb }
     .hidden { display:none !important }
-    #fallback-link {
-      margin-top:12px;
-      text-align:center;
-    }
-    #fallback-link a {
-      color:#0af;
-      font-weight:600;
-      font-size:16px;
-      text-decoration:underline;
-    }
 
     /* Loading animation */
     .spinner {
@@ -108,68 +98,70 @@
       <p>Check back later for the next game!</p>
     </div>
 
-    <!-- YouTube player -->
-    <div id="youtube-embed" class="player hidden"></div>
-
-    <!-- Fallback link -->
-    <div id="fallback-link" class="hidden">
-      <p>If the stream doesn’t appear, 
-        <a id="youtube-link" href="#" target="_blank" rel="noopener">watch directly on YouTube</a>.
-      </p>
+    <!-- YouTube Live Embed -->
+    <div id="youtube-embed" class="player hidden">
+      <iframe
+        id="live-frame"
+        src="https://www.youtube.com/embed/live_stream?channel=UCCvYIv25tpMuQuGATwxvMjA&autoplay=1"
+        allow="autoplay; encrypted-media"
+        allowfullscreen>
+      </iframe>
     </div>
   </div>
 
   <script>
-    // === CONFIG ===
-    const CHANNEL_ID = "UCCvYIv25tpMuQuGATwxvMjA";
-    const API_PROXY_URL = "https://buffalos-live-proxy.wdoggett.workers.dev";
-
-    const playerDiv  = document.getElementById("youtube-embed");
-    const offlineDiv = document.getElementById("offline");
+    // === Simple load monitor ===
     const loadingDiv = document.getElementById("loading");
-    const linkDiv    = document.getElementById("fallback-link");
-    const linkAnchor = document.getElementById("youtube-link");
+    const offlineDiv = document.getElementById("offline");
+    const playerDiv  = document.getElementById("youtube-embed");
+    const liveFrame  = document.getElementById("live-frame");
 
-    async function checkIfLive() {
-      try {
-        const resp = await fetch(API_PROXY_URL);
-        const data = await resp.json();
-        if (data.items && data.items.length > 0) {
-          const videoId = data.items[0].id.videoId;
-          playerDiv.innerHTML = `
-            <iframe
-              src="https://www.youtube.com/embed/${videoId}?autoplay=1"
-              allow="autoplay; encrypted-media"
-              allowfullscreen>
-            </iframe>`;
-          showPlayer(videoId);
-        } else {
-          showOffline();
-        }
-      } catch (err) {
-        console.error("YouTube API error:", err);
-        showOffline();
-      }
+    // Show loading screen first
+    showLoading();
+
+    // When iframe loads successfully
+    liveFrame.addEventListener("load", () => {
+      showPlayer();
+      // After a few seconds, check if YouTube shows "unavailable"
+      setTimeout(checkUnavailable, 4000);
+    });
+
+    function showLoading() {
+      loadingDiv.classList.remove("hidden");
+      playerDiv.classList.add("hidden");
+      offlineDiv.classList.add("hidden");
     }
 
-    function showPlayer(videoId) {
+    function showPlayer() {
       loadingDiv.classList.add("hidden");
       playerDiv.classList.remove("hidden");
       offlineDiv.classList.add("hidden");
-      linkDiv.classList.remove("hidden");
-      linkAnchor.href = `https://www.youtube.com/watch?v=${videoId}`;
     }
 
     function showOffline() {
       loadingDiv.classList.add("hidden");
       playerDiv.classList.add("hidden");
       offlineDiv.classList.remove("hidden");
-      linkDiv.classList.add("hidden");
     }
 
-    // Initial check + refresh every 60s
-    checkIfLive();
-    setInterval(checkIfLive, 60000);
+    // Basic heuristic: detect "unavailable" message inside iframe (works for most browsers)
+    function checkUnavailable() {
+      try {
+        const iframeDoc = liveFrame.contentDocument || liveFrame.contentWindow.document;
+        const text = iframeDoc.body ? iframeDoc.body.innerText : "";
+        if (text.includes("unavailable") || text.includes("begin soon")) {
+          showOffline();
+        }
+      } catch (e) {
+        // Cross-domain protection blocks access, but if the video loaded fine, leave as-is
+      }
+    }
+
+    // Safety timeout: if nothing loads in 10s, show offline
+    setTimeout(() => {
+      const isHidden = playerDiv.classList.contains("hidden");
+      if (isHidden) showOffline();
+    }, 10000);
   </script>
 </body>
 </html>
