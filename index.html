@@ -5,7 +5,6 @@
   <title>Buffalos Live</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Performance hints for YT -->
   <link rel="preconnect" href="https://www.youtube.com" crossorigin>
   <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
   <link rel="preconnect" href="https://www.google.com" crossorigin>
@@ -14,42 +13,81 @@
 
   <style>
     :root { --maxw: 1280px; }
-    html, body { margin:0; background:#000; color:#fff; font-family:"Inter", system-ui, Segoe UI, Roboto, Helvetica, Arial; }
-    header { padding:18px 12px; text-align:center; font-weight:800; letter-spacing:.2px; font-size:clamp(20px,3.2vw,28px); }
-    .wrap { max-width:var(--maxw); margin:0 auto; padding:0 12px 40px; }
-    .logo { max-width:200px; height:auto; margin:8px auto 18px; display:block; opacity:.98; }
-
-    .player { position:relative; width:100%; max-width:1280px; margin:0 auto; background:#0c0c0c; border-radius:10px; overflow:hidden; }
-    .player iframe { width:100% !important; height:100% !important; aspect-ratio:16/9; border:0; display:block; }
-
+    html, body {
+      margin:0;
+      background:#000;
+      color:#fff;
+      font-family:"Inter", system-ui, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    header {
+      padding:18px 12px;
+      text-align:center;
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size:clamp(20px,3.2vw,28px);
+    }
+    .wrap {
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding:0 12px 40px;
+    }
+    .logo {
+      max-width:200px;
+      height:auto;
+      margin:8px auto 18px;
+      display:block;
+      opacity:.98;
+    }
+    .player {
+      position:relative;
+      width:100%;
+      max-width:1280px;
+      margin:0 auto;
+      background:#0c0c0c;
+      border-radius:10px;
+      overflow:hidden;
+    }
+    .player iframe {
+      width:100% !important;
+      height:100% !important;
+      aspect-ratio:16/9;
+      border:0;
+      display:block;
+    }
     #offline, #loading {
-      display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px;
-      text-align:center; min-height:50vh; background:#0c0c0c; border-radius:10px; padding:24px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      gap:12px;
+      text-align:center;
+      min-height:50vh;
+      background:#0c0c0c;
+      border-radius:10px;
+      padding:24px;
     }
     #offline h2, #loading h2 { margin:0; font-weight:800 }
     #offline p, #loading p  { margin:0; color:#bbb }
     .hidden { display:none !important }
-
     .btn {
-      display:inline-block; padding:10px 14px; border-radius:8px; background:#0af; color:#000; font-weight:800; text-decoration:none;
+      display:inline-block;
+      padding:10px 14px;
+      border-radius:8px;
+      background:#0af;
+      color:#000;
+      font-weight:800;
+      text-decoration:none;
     }
-    .spinner { width:36px; height:36px; border:4px solid #444; border-top:4px solid #0af; border-radius:50%; animation:spin 1s linear infinite; }
+    .spinner {
+      width:36px;
+      height:36px;
+      border:4px solid #444;
+      border-top:4px solid #0af;
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+    }
     @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-
     .foot { opacity:.7; text-align:center; font-size:12px; margin-top:16px; }
-
-    /* Live overlay controls */
-    .overlay {
-      position:absolute; inset:auto 12px 12px auto; display:flex; gap:8px; z-index:2;
-    }
-    .pill {
-      padding:8px 10px; border-radius:999px; font-weight:800; border:0; cursor:pointer;
-    }
-    .pill.live { background:#f33; color:#fff; }
-    .pill.unmute { background:#0af; color:#000; }
-    .net-badge {
-      position:fixed; left:12px; bottom:12px; background:#222; color:#bbb; padding:6px 10px; border-radius:8px; font-size:12px; opacity:.9;
-    }
   </style>
 </head>
 <body>
@@ -68,50 +106,42 @@
       <h2>Buffalos are offline</h2>
       <p>Check back later for the next game!</p>
       <p><a class="btn" id="ytBtn" target="_blank" rel="noopener">Watch on YouTube</a></p>
-      <div class="foot">This page will auto-start within seconds when we go live.</div>
+      <div class="foot">This page auto-starts when we go live.</div>
     </section>
 
     <!-- Player -->
     <section id="youtube-embed" class="player hidden">
-      <!-- overlay buttons while live -->
-      <div class="overlay">
-        <span class="pill live">LIVE</span>
-        <button id="unmuteBtn" class="pill unmute" type="button">Unmute</button>
-      </div>
       <iframe
         id="live-frame"
         title="Buffalos Live"
         allow="autoplay; encrypted-media; picture-in-picture"
         allowfullscreen
-        referrerpolicy="origin-when-cross-origin"
-      ></iframe>
+        referrerpolicy="origin-when-cross-origin">
+      </iframe>
     </section>
   </div>
 
-  <div id="netBadge" class="net-badge hidden">Offline: waiting for network…</div>
-
-  <!-- YouTube IFrame Player API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
-
   <script>
-    // ========= CONFIG =========
-    const CHANNEL_ID = "UCCvYIv25tpMuQuGATwxvMjA"; // <-- change if needed
+    // ---- CONFIG ----
+    const CHANNEL_ID = "UCCvYIv25tpMuQuGATwxvMjA";
     const CHANNEL_URL = `https://www.youtube.com/channel/${CHANNEL_ID}`;
-    const BASE_EMBED = `https://www.youtube.com/embed/live_stream?channel=${CHANNEL_ID}&autoplay=1&mute=1&playsinline=1&enablejsapi=1&modestbranding=1&rel=0`;
-    // Adaptive polling: fast for first 2 minutes, then back off
-    const FAST_MS = 5000;      // fast pickup (~4–7s typical)
-    const SLOW_MS = 12000;     // reduced load after initial window
-    const FAST_WINDOW_MS = 2 * 60 * 1000;
+    const WORKER_URL  = "https://buffalosliveapp.wdoggett.workers.dev/live?channel=" + CHANNEL_ID;
 
-    // ========= ELEMENTS =========
+    const POLL_MS = 7000;
+    const PLAYER_PARAMS = new URLSearchParams({
+      autoplay:"1",
+      mute:"1",
+      playsinline:"1",
+      modestbranding:"1",
+      rel:"0"
+    });
+
+    // ---- ELEMENTS ----
     const loadingDiv = document.getElementById("loading");
     const offlineDiv = document.getElementById("offline");
     const playerDiv  = document.getElementById("youtube-embed");
     const liveFrame  = document.getElementById("live-frame");
     const ytBtn      = document.getElementById("ytBtn");
-    const unmuteBtn  = document.getElementById("unmuteBtn");
-    const netBadge   = document.getElementById("netBadge");
-
     ytBtn.href = CHANNEL_URL;
 
     function show(el){ el.classList.remove("hidden"); }
@@ -120,131 +150,48 @@
     function showLive(){ hide(loadingDiv); hide(offlineDiv); show(playerDiv); }
     function showOff(){ hide(loadingDiv); hide(playerDiv); show(offlineDiv); }
 
-    // ========= STATE =========
-    let player = null;
-    let seenLive = false;
+    // ---- LOGIC ----
     let pollTimer = null;
-    let appStart = Date.now();
+    let currentVideoId = null;
 
-    // ========= YT API HOOK =========
-    window.onYouTubeIframeAPIReady = function(){
-      // Seed the iframe src so the API can bind
-      refreshEmbed(true);
+    async function checkLiveOnce(){
+      try {
+        const res = await fetch(WORKER_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("worker " + res.status);
+        const data = await res.json();
 
-      player = new YT.Player('live-frame', {
-        playerVars: {
-          autoplay: 1, mute: 1, playsinline: 1, rel: 0, modestbranding: 1,
-          origin: location.origin
-        },
-        events: {
-          'onReady': onPlayerReady,
-          'onStateChange': onPlayerStateChange,
-          'onError': onPlayerError
+        if (data?.live && data.videoId) {
+          if (currentVideoId !== data.videoId) {
+            currentVideoId = data.videoId;
+            liveFrame.src = `https://www.youtube.com/embed/${currentVideoId}?` + PLAYER_PARAMS.toString();
+          }
+          showLive();
+        } else {
+          currentVideoId = null;
+          showOff();
         }
-      });
-    };
-
-    function onPlayerReady(){
-      showOff();
-      startPolling();
-    }
-
-    function onPlayerStateChange(e){
-      // -1 UNSTARTED, 0 ENDED, 1 PLAYING, 2 PAUSED, 3 BUFFERING, 5 CUED
-      if (e.data === YT.PlayerState.BUFFERING || e.data === YT.PlayerState.PLAYING) {
-        seenLive = true;
-        showLive();
-        // Keep muted until user clicks; browser policies
-      } else if (seenLive && (e.data === YT.PlayerState.ENDED || e.data === YT.PlayerState.UNSTARTED)) {
-        // Stream ended or flipped back to placeholder
-        seenLive = false;
-        showOff();
-        // polling continues; if it restarts we’ll catch it again
+      } catch {
+        if (!currentVideoId) showOff();
       }
-    }
-
-    function onPlayerError(){
-      // Common while not live; stay offline and keep polling
-      seenLive = false;
-      showOff();
-      // Immediate nudge to catch just-published go-live
-      setTimeout(() => refreshEmbed(), 1500);
-    }
-
-    // ========= POLLING / REFRESH =========
-    function currentInterval(){
-      const elapsed = Date.now() - appStart;
-      return (elapsed < FAST_WINDOW_MS) ? FAST_MS : SLOW_MS;
     }
 
     function startPolling(){
       stopPolling();
       pollTimer = setInterval(() => {
-        if (document.hidden) return; // pause in background; we’ll recheck on focus
-        // If we aren't live, refresh aggressively to catch go-live quickly
-        if (!seenLive) refreshEmbed();
-        else {
-          // While live, occasionally nudge a reload if player slips (rare)
-          const s = safeState();
-          if (s !== YT.PlayerState.PLAYING && s !== YT.PlayerState.BUFFERING) {
-            refreshEmbed();
-          }
-        }
-      }, currentInterval());
+        if (!document.hidden) checkLiveOnce();
+      }, POLL_MS);
     }
-    function stopPolling(){
-      clearInterval(pollTimer);
-      pollTimer = null;
-    }
+    function stopPolling(){ clearInterval(pollTimer); pollTimer = null; }
 
-    function refreshEmbed(force = false){
-      // Add cache-buster to force YouTube to serve fresh status
-      // If force is true, always reload; otherwise avoid pointlessly spamming when PLAYING
-      if (!force) {
-        const s = safeState();
-        if (s === YT.PlayerState.PLAYING || s === YT.PlayerState.BUFFERING) return;
-      }
-      liveFrame.src = `${BASE_EMBED}&ts=${Date.now()}`;
-    }
-
-    function safeState(){
-      try { return player && typeof player.getPlayerState === "function" ? player.getPlayerState() : -1; }
-      catch { return -1; }
-    }
-
-    // Re-check instantly when tab gains focus
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) {
-        refreshEmbed(true);
-        // Restart polling with possibly new cadence (fast vs slow)
-        startPolling();
-      }
+      if (!document.hidden) checkLiveOnce();
     });
 
-    // Network awareness: if offline, show badge; when back, nudge a check
-    function updateNetBadge(){
-      if (navigator.onLine) hide(netBadge); else show(netBadge);
-    }
-    window.addEventListener('online',  () => { updateNetBadge(); refreshEmbed(true); });
-    window.addEventListener('offline', () => { updateNetBadge(); });
-
-    // Unmute control (user gesture required on mobile)
-    unmuteBtn.addEventListener('click', () => {
-      try { player && player.unMute && player.unMute(); } catch {}
-    });
-
-    // Initial UI
+    // Boot
     showLoad();
-    updateNetBadge();
-    // Failsafe: if API never loads, show offline after 10s
-    setTimeout(() => { if (!player) showOff(); }, 10000);
+    checkLiveOnce();
+    startPolling();
+    setTimeout(() => { if (!currentVideoId) showOff(); }, 10000);
   </script>
-
-  <noscript>
-    <div style="max-width:640px;margin:24px auto;color:#bbb;text-align:center">
-      JavaScript is required to load the live player. You can still
-      <a href="https://www.youtube.com/channel/UCCvYIv25tpMuQuGATwxvMjA" target="_blank" rel="noopener">watch on YouTube</a>.
-    </div>
-  </noscript>
 </body>
 </html>
