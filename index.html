@@ -122,76 +122,82 @@
   </div>
 
   <script>
-    // ---- CONFIG ----
-    const CHANNEL_ID = "UCCvYIv25tpMuQuGATwxvMjA";
-    const CHANNEL_URL = `https://www.youtube.com/channel/${CHANNEL_ID}`;
-    const WORKER_URL  = "https://buffalosliveapp.wdoggett.workers.dev/live?channel=" + CHANNEL_ID;
+  // ---- CONFIG ----
+  // Keep YouTube for the bottom button exactly as before:
+  const CHANNEL_ID = "UCCvYIv25tpMuQuGATwxvMjA";
+  const CHANNEL_URL = `https://www.youtube.com/channel/${CHANNEL_ID}`;
 
-    const POLL_MS = 7000;
-    const PLAYER_PARAMS = new URLSearchParams({
-      autoplay:"1",
-      mute:"1",
-      playsinline:"1",
-      modestbranding:"1",
-      rel:"0"
-    });
+  // New: SidelineHD worker + URL
+  const TEAM_SLHD   = "HoustonBuffalos10";
+  const SIDELINE_URL = `https://sidelinehd.com/${TEAM_SLHD}/live`;
+  const WORKER_URL   = "https://buffalosliveapp.wdoggett.workers.dev/slhd?team=" + TEAM_SLHD;
 
-    // ---- ELEMENTS ----
-    const loadingDiv = document.getElementById("loading");
-    const offlineDiv = document.getElementById("offline");
-    const playerDiv  = document.getElementById("youtube-embed");
-    const liveFrame  = document.getElementById("live-frame");
-    const ytBtn      = document.getElementById("ytBtn");
-    ytBtn.href = CHANNEL_URL;
+  const POLL_MS = 7000; // same cadence you had
 
-    function show(el){ el.classList.remove("hidden"); }
-    function hide(el){ el.classList.add("hidden"); }
-    function showLoad(){ show(loadingDiv); hide(playerDiv); hide(offlineDiv); }
-    function showLive(){ hide(loadingDiv); hide(offlineDiv); show(playerDiv); }
-    function showOff(){ hide(loadingDiv); hide(playerDiv); show(offlineDiv); }
+  // ---- ELEMENTS ----
+  const loadingDiv = document.getElementById("loading");
+  const offlineDiv = document.getElementById("offline");
+  const playerDiv  = document.getElementById("youtube-embed"); // reuse the same container
+  const liveFrame  = document.getElementById("live-frame");
+  const ytBtn      = document.getElementById("ytBtn");
+  ytBtn.textContent = "Watch on YouTube"; // keep label
+  ytBtn.href        = CHANNEL_URL;        // keep pointing to YouTube
 
-    // ---- LOGIC ----
-    let pollTimer = null;
-    let currentVideoId = null;
+  function show(el){ el.classList.remove("hidden"); }
+  function hide(el){ el.classList.add("hidden"); }
+  function showLoad(){ show(loadingDiv); hide(playerDiv); hide(offlineDiv); }
+  function showLive(){ hide(loadingDiv); hide(offlineDiv); show(playerDiv); }
+  function showOff(){ hide(loadingDiv); hide(playerDiv); show(offlineDiv); }
 
-    async function checkLiveOnce(){
-      try {
-        const res = await fetch(WORKER_URL, { cache: "no-store" });
-        if (!res.ok) throw new Error("worker " + res.status);
-        const data = await res.json();
+  // ---- LOGIC ----
+  let pollTimer = null;
+  let isLiveNow = false;
 
-        if (data?.live && data.videoId) {
-          if (currentVideoId !== data.videoId) {
-            currentVideoId = data.videoId;
-            liveFrame.src = `https://www.youtube.com/embed/${currentVideoId}?` + PLAYER_PARAMS.toString();
-          }
-          showLive();
-        } else {
-          currentVideoId = null;
-          showOff();
+  async function checkLiveOnce(){
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort("timeout"), 8000);
+      const res = await fetch(WORKER_URL, { cache: "no-store", signal: ctrl.signal });
+      clearTimeout(t);
+
+      if (!res.ok) throw new Error("worker " + res.status);
+      const data = await res.json();
+
+      if (data?.live === true) {
+        // Only (re)load when we flip to live or src isn't set yet
+        if (!isLiveNow || !liveFrame.src || !liveFrame.src.startsWith(SIDELINE_URL)) {
+          liveFrame.removeAttribute("srcdoc"); // in case a browser cached a prior srcdoc
+          liveFrame.src = SIDELINE_URL;        // embed SidelineHD live page
         }
-      } catch {
-        if (!currentVideoId) showOff();
+        isLiveNow = true;
+        showLive();
+      } else {
+        isLiveNow = false;
+        showOff();
       }
+    } catch (e) {
+      // On error, don’t flip to loading forever—just show Offline with the YouTube button
+      if (!isLiveNow) showOff();
     }
+  }
 
-    function startPolling(){
-      stopPolling();
-      pollTimer = setInterval(() => {
-        if (!document.hidden) checkLiveOnce();
-      }, POLL_MS);
-    }
-    function stopPolling(){ clearInterval(pollTimer); pollTimer = null; }
-
-    document.addEventListener("visibilitychange", () => {
+  function startPolling(){
+    stopPolling();
+    pollTimer = setInterval(() => {
       if (!document.hidden) checkLiveOnce();
-    });
+    }, POLL_MS);
+  }
+  function stopPolling(){ if (pollTimer) clearInterval(pollTimer); pollTimer = null; }
 
-    // Boot
-    showLoad();
-    checkLiveOnce();
-    startPolling();
-    setTimeout(() => { if (!currentVideoId) showOff(); }, 10000);
-  </script>
-</body>
-</html>
+  // Wake checks when page regains attention or network returns
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkLiveOnce(); });
+  window.addEventListener("focus", checkLiveOnce);
+  window.addEventListener("online", checkLiveOnce);
+
+  // Boot
+  showLoad();
+  checkLiveOnce();
+  startPolling();
+  // If nothing determined after 10s, show Offline w/ YouTube button
+  setTimeout(() => { if (!isLiveNow) showOff(); }, 10000);
+</script>
