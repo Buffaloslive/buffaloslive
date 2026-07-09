@@ -1,27 +1,30 @@
 # Post Oak Live
 
-Static website for PostOakLive.com / Buffalos Live.
+Static production site for Post Oak Live, focused on Post Oak Little League and the current featured team: the Post Oak 10s All Stars.
 
 ## Stack
 
-- Static HTML
-- CSS custom properties
-- Lightweight JavaScript only for footer year and header state
-- Hosted on GitHub Pages
+- Plain HTML/CSS/JavaScript
+- GitHub Pages from the `main` branch root
+- Self-hosted HTML5 MP4 hype video
 
 ## Pages
 
-- `index.html` — landing page
-- `live.html` — Varsity Hype livestream page
-- `hype.html` — Twitch hype video page
+- `index.html` — primary landing page
+- `live.html` — live stream page with provider embed and direct fallback
+- `hype.html` — self-hosted state tournament hype video page
 
-## Media
+## Brand assets
 
-- Live stream: https://app.varsityhype.com/livestream/16e0a0a6-6b84-4c00-9dd6-6ca06510db5c/
-- Hype video: https://www.twitch.tv/videos/2815794470
+- `assets/brand/post-oak-little-league-logo.png` — primary Post Oak Little League logo
+- `assets/brand/post-oak-logo-512.png` — compact site/fav icon
+- `assets/brand/post-oak-state-art.jpg` — state tournament art reference
 
-Both media pages use embedded iframes plus direct-link fallbacks because external providers may block embedding on some devices or domains.
+## Video assets
 
-## Maintenance
+- `assets/video/post-oak-10s-hype.mp4` — web-ready 720p MP4, metadata-preload friendly
+- `assets/video/hype-poster.jpg` — generated poster frame
 
-This site intentionally avoids build tooling, backends, databases, and dependencies. Edit the HTML/CSS directly and push to GitHub Pages.
+## Notes
+
+The public custom-domain setting currently remains on `buffaloslive.com`, with PostOakLive.com forwarding to the updated GitHub Pages site. If GoDaddy access is available later, the preferred cleanup is to point PostOakLive.com directly at GitHub Pages and set the GitHub Pages custom domain to `postoaklive.com`.
