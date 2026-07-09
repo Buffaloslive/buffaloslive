@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hype Video | Post Oak Live</title>
+  <meta name="description" content="Watch the featured Post Oak Live hype video." />
+  <link rel="icon" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header solid">
+    <a class="brand" href="index.html" aria-label="Post Oak Live home">
+      <img src="logo.png" alt="Post Oak Buffaloes logo" />
+      <span><strong>Post Oak</strong><em>Live</em></span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a class="nav-link" href="index.html">Home</a>
+      <a class="nav-link" href="live.html">Watch Live</a>
+      <a class="nav-link active" href="hype.html">Hype Video</a>
+    </nav>
+  </header>
+
+  <main id="main" class="watch-page">
+    <section class="watch-hero">
+      <div>
+        <p class="eyebrow">Featured video</p>
+        <h1>Hype Video</h1>
+        <p class="lede">A dedicated page for the featured Post Oak Live Twitch video.</p>
+      </div>
+      <a class="btn btn-primary" href="https://www.twitch.tv/videos/2815794470" target="_blank" rel="noopener noreferrer">Open on Twitch</a>
+    </section>
+
+    <section class="media-shell" aria-label="Twitch hype video player">
+      <div class="media-frame">
+        <iframe
+          title="Post Oak Live hype video"
+          src="https://player.twitch.tv/?video=2815794470&parent=postoaklive.com&parent=www.postoaklive.com&parent=buffaloslive.com&parent=www.buffaloslive.com"
+          allowfullscreen
+          allow="autoplay; fullscreen; picture-in-picture"
+          loading="lazy"></iframe>
+      </div>
+      <div class="media-fallback">
+        <strong>Video not loading?</strong>
+        <p>Twitch requires an approved parent domain for embeds. If your browser blocks the frame, the direct Twitch link will still work.</p>
+        <a class="text-link" href="https://www.twitch.tv/videos/2815794470" target="_blank" rel="noopener noreferrer">Watch directly on Twitch</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>© <span id="year"></span> Post Oak Live</span>
+    <span>Featured video hosted by Twitch.</span>
+  </footer>
+  <script src="site.js"></script>
+</body>
+</html>
